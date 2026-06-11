@@ -5,7 +5,7 @@ import requests
 
 @st.cache_data(ttl=3600)
 def get_politician_trades():
-    api_key = st.secrets.get("FMP_API_KEY", "")
+    api_key = st.secrets["FMP_API_KEY"]
 
     if not api_key:
         return pd.DataFrame()
