@@ -5,36 +5,70 @@ import requests
 
 @st.cache_data(ttl=3600)
 def get_politician_trades():
-    api_key = st.secrets["FMP_API_KEY"]
+    api_key = "wqJTwbcANxGG6u9wsmHmNTLjW3ATpe50"
 
     if not api_key:
         return pd.DataFrame()
 
-    url = "https://financialmodelingprep.com/stable/house-disclosure-latest"
-    params = {"apikey": api_key}
+    endpoints = [
+        ("House", "https://financialmodelingprep.com/stable/house-latest"),
+        ("Senate", "https://financialmodelingprep.com/stable/senate-latest"),
+    ]
 
-    r = requests.get(url, params=params, timeout=30)
-    r.raise_for_status()
+    frames = []
 
-    data = r.json()
-    df = pd.DataFrame(data)
+    for chamber, url in endpoints:
+        params = {
+            "page": 0,
+            "limit": 100,
+            "apikey": api_key
+        }
 
-    if df.empty:
-        return df
+        r = requests.get(url, params=params, timeout=30)
+        r.raise_for_status()
+
+        data = r.json()
+        df = pd.DataFrame(data)
+
+        if df.empty:
+            continue
+
+        df["chamber"] = chamber
+        frames.append(df)
+
+    if not frames:
+        return pd.DataFrame()
+
+    df = pd.concat(frames, ignore_index=True)
 
     df = df.rename(columns={
         "disclosureDate": "date",
+        "transactionDate": "transaction_date",
         "representative": "politician",
+        "senator": "politician",
         "symbol": "ticker",
         "assetDescription": "company",
+        "asset": "company",
         "transaction": "transaction",
+        "type": "transaction",
         "amount": "amount_range"
     })
 
-    keep = ["date", "politician", "ticker", "company", "transaction", "amount_range"]
+    keep = [
+        "date",
+        "transaction_date",
+        "chamber",
+        "politician",
+        "ticker",
+        "company",
+        "transaction",
+        "amount_range"
+    ]
+
     df = df[[c for c in keep if c in df.columns]]
 
     df["signal_type"] = "Politician trade"
+
     return df
 
 from datetime import datetime, timedelta
