@@ -2,6 +2,41 @@
 import streamlit as st
 import pandas as pd
 import requests
+
+@st.cache_data(ttl=3600)
+def get_politician_trades():
+    api_key = st.secrets.get("FMP_API_KEY", "")
+
+    if not api_key:
+        return pd.DataFrame()
+
+    url = "https://financialmodelingprep.com/stable/house-disclosure-latest"
+    params = {"apikey": api_key}
+
+    r = requests.get(url, params=params, timeout=30)
+    r.raise_for_status()
+
+    data = r.json()
+    df = pd.DataFrame(data)
+
+    if df.empty:
+        return df
+
+    df = df.rename(columns={
+        "disclosureDate": "date",
+        "representative": "politician",
+        "symbol": "ticker",
+        "assetDescription": "company",
+        "transaction": "transaction",
+        "amount": "amount_range"
+    })
+
+    keep = ["date", "politician", "ticker", "company", "transaction", "amount_range"]
+    df = df[[c for c in keep if c in df.columns]]
+
+    df["signal_type"] = "Politician trade"
+    return df
+
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
@@ -151,13 +186,19 @@ with tab2:
     st.dataframe(insider_df, use_container_width=True)
 
 with tab3:
-    pol = upload_section("Politician Trades", [
-        "date", "politician", "ticker", "company", "transaction", "amount_range", "source"
-    ])
-    if not pol.empty:
-        pol["signal_type"] = "Politician trade"
-        pol["score"] = pol.apply(score_signal, axis=1)
-    st.dataframe(pol, use_container_width=True)
+    st.header("Politician Trades")
+
+    try:
+        pol = get_politician_trades()
+
+        if pol.empty:
+            st.warning("No politician trade data loaded. Check your API key.")
+        else:
+            pol["score"] = pol.apply(score_signal, axis=1)
+            st.dataframe(pol, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Could not load politician trades: {e}")
 
 with tab4:
     funds = upload_section("Hedge Funds / 13F", [
