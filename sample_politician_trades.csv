@@ -1,0 +1,3 @@
+date,politician,ticker,company,transaction,amount_range,source
+2026-06-10,Example Senator,NVDA,NVIDIA Corp,Purchase,$15,001-$50,000,https://example.com
+2026-06-09,Example Representative,RKLB,Rocket Lab USA,Purchase,$1,001-$15,000,https://example.com

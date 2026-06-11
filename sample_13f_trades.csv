@@ -1,0 +1,3 @@
+filing_date,fund,ticker,company,action,value,percent_portfolio,source
+2026-05-15,Berkshire Hathaway,AAPL,Apple Inc,Reduced,1000000000,20.0,https://example.com
+2026-05-15,Pershing Square,GOOG,Alphabet Inc,New Position,500000000,8.5,https://example.com
